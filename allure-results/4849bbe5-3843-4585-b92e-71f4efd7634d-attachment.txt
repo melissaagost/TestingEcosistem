@@ -1,0 +1,4 @@
+const b = pm.response.json();
+pm.test("Creación de libro 201/200", () => [200,201].includes(pm.response.code));
+pm.test("Libro tiene id", () => b && (b._id || b.id));
+pm.environment.set("bookId", b._id || b.id);

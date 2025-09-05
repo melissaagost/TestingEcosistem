@@ -1,0 +1,4 @@
+const a = pm.response.json();
+pm.test("Creación de autor 201/200", () => [200,201].includes(pm.response.code));
+pm.test("Autor tiene id", () => a && (a._id || a.id));
+pm.environment.set("authorId", a._id || a.id);

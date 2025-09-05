@@ -1,0 +1,1 @@
+pm.test("404 Not Found", () => pm.response.code === 404);

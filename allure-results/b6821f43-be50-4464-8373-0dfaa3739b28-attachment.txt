@@ -1,0 +1,1 @@
+pm.test("No existe (404 o similar)", () => [404,400].includes(pm.response.code));

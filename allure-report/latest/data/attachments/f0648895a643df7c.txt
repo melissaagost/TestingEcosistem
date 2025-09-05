@@ -1,0 +1,1 @@
+{"message":"Book updated successfully","book":{"_id":"68ba62cab1bd364471f91c57","title":"To Kill a Mockingbird","author":"{{authorId}}","publisher":"J.B. Lippincott & Co.","pageCount":300,"__v":0}}

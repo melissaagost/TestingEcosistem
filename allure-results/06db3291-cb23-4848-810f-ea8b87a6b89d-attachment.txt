@@ -1,0 +1,13 @@
+const isJson = pm.response.headers.get('Content-Type')?.includes('application/json');
+const hasBody = pm.response.text().length > 0;
+if (isJson && hasBody) {
+  const data = pm.response.json();
+  
+    pm.test("200 OK", () => pm.response.code === 200 || code ===204);
+    const a = pm.response.json();
+    pm.test("Nombre actualizado", () => a && a.name && a.name.includes("(updated)"));
+
+
+} else {
+  pm.test("Sin body (204 o error manejado)", () => [204,404].includes(pm.response.code));
+}

@@ -1,0 +1,501 @@
+{
+	"info": {
+		"_postman_id": "8f805bb4-3601-4804-a0f7-13ad9a25e967",
+		"name": "Book API Tests",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "48184790"
+	},
+	"item": [
+		{
+			"name": "GET books",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"200 OK\", () => pm.response.code === 200);\r",
+							"pm.test(\"Respuesta es un arreglo JSON\", () => Array.isArray(pm.response.json()));\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/books",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"books"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "POST Create Author",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const a = pm.response.json();\r",
+							"pm.test(\"Creación de autor 201/200\", () => [200,201].includes(pm.response.code));\r",
+							"pm.test(\"Autor tiene id\", () => a && (a._id || a.id));\r",
+							"pm.environment.set(\"authorId\", a._id || a.id);\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{ \"name\": \"Harper Lee\" }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/author",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"author"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET Author by Id",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const isJson = pm.response.headers.get('Content-Type')?.includes('application/json');\r",
+							"const hasBody = pm.response.text().length > 0;\r",
+							"if (isJson && hasBody) {\r",
+							"  const data = pm.response.json();\r",
+							"\r",
+							"    pm.test(\"200 OK\", () => pm.response.code === 200);\r",
+							"    const a = pm.response.json();\r",
+							"    pm.test(\"Tiene id\", () => a && (a._id || a.id));\r",
+							"    pm.test(\"Tiene name\", () => a && a.name);\r",
+							"\r",
+							"\r",
+							"} else {\r",
+							"  pm.test(\"Sin body (204 o error manejado)\", () => [204,404].includes(pm.response.code));\r",
+							"}\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/author/{{authorId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"author",
+						"{{authorId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET Authors",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"200 OK\", () => pm.response.code === 200);\r",
+							"pm.test(\"Respuesta es un arreglo JSON\", () => Array.isArray(pm.response.json()));"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/author",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"author"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "PUT Update Author",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const isJson = pm.response.headers.get('Content-Type')?.includes('application/json');\r",
+							"const hasBody = pm.response.text().length > 0;\r",
+							"if (isJson && hasBody) {\r",
+							"  const data = pm.response.json();\r",
+							"  \r",
+							"    pm.test(\"200 OK\", () => pm.response.code === 200 || code ===204);\r",
+							"    const a = pm.response.json();\r",
+							"    pm.test(\"Nombre actualizado\", () => a && a.name && a.name.includes(\"(updated)\"));\r",
+							"\r",
+							"\r",
+							"} else {\r",
+							"  pm.test(\"Sin body (204 o error manejado)\", () => [204,404].includes(pm.response.code));\r",
+							"}\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{ \"name\": \"Harper Lee (updated)\" }\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/author/{{authorId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"author",
+						"{{authorId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "DELETE Author",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Borrado 200/204\", () => [200,204].includes(pm.response.code));\r",
+							"pm.environment.unset(\"authorId\");\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/author/{{authorId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"author",
+						"{{authorId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET Author Not Found",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"404 Not Found\", () => pm.response.code === 404);\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/author/{{authorId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"author",
+						"{{authorId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "POST Create Book",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const b = pm.response.json();\r",
+							"pm.test(\"Creación de libro 201/200\", () => [200,201].includes(pm.response.code));\r",
+							"pm.test(\"Libro tiene id\", () => b && (b._id || b.id));\r",
+							"pm.environment.set(\"bookId\", b._id || b.id);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"title\": \"To Kill a Mockingbird\",\r\n  \"author\": \"{{authorId}}\",\r\n  \"publisher\": \"J.B. Lippincott & Co.\",\r\n  \"pageCount\": 281\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/books",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"books"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET Book by Id",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const isJson = pm.response.headers.get('Content-Type')?.includes('application/json');\r",
+							"const hasBody = pm.response.text().length > 0;\r",
+							"if (isJson && hasBody) {\r",
+							"  const data = pm.response.json();\r",
+							"\r",
+							"    pm.test(\"200 OK\", () => pm.response.code === 200);\r",
+							"    const b = pm.response.json();\r",
+							"    pm.test(\"Tiene título\", () => b && b.title);\r",
+							"\r",
+							"} else {\r",
+							"  pm.test(\"Sin body (204 o error manejado)\", () => [204,404].includes(pm.response.code));\r",
+							"}\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/books/{{bookId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"books",
+						"{{bookId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "PUT Update Book",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const isJson = pm.response.headers.get('Content-Type')?.includes('application/json');\r",
+							"const hasBody = pm.response.text().length > 0;\r",
+							"if (isJson && hasBody) {\r",
+							"  const data = pm.response.json();\r",
+							"  \r",
+							"    pm.test(\"200 OK\", () => pm.response.code === 200 || code === 204);\r",
+							"    const b = pm.response.json();\r",
+							"    pm.test(\"pageCount actualizado\", () => b && (+b.pageCount === 300));\r",
+							"\r",
+							"} else {\r",
+							"  pm.test(\"Sin body (204 o error manejado)\", () => [204,404].includes(pm.response.code));\r",
+							"}\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{ \"pageCount\": 300 }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/books/{{bookId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"books",
+						"{{bookId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "DELETE Book",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Borrado 200/204\", () => [200,204].includes(pm.response.code));"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/books/{{bookId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"books",
+						"{{bookId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET Book Not Found",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"No existe (404 o similar)\", () => [404,400].includes(pm.response.code));\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/books/{{bookId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"books",
+						"{{bookId}}"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

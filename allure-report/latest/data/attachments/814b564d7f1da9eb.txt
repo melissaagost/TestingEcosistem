@@ -1,0 +1,2 @@
+pm.test("Borrado 200/204", () => [200,204].includes(pm.response.code));
+pm.environment.unset("authorId");

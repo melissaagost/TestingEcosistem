@@ -1,0 +1,6 @@
+{
+  "title": "To Kill a Mockingbird",
+  "author": "{{authorId}}",
+  "publisher": "J.B. Lippincott & Co.",
+  "pageCount": 281
+}

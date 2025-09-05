@@ -1,0 +1,1 @@
+{"title":"To Kill a Mockingbird","author":"{{authorId}}","publisher":"J.B. Lippincott & Co.","pageCount":281,"_id":"68ba62cab1bd364471f91c57","__v":0}

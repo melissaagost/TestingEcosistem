@@ -1,0 +1,14 @@
+const isJson = pm.response.headers.get('Content-Type')?.includes('application/json');
+const hasBody = pm.response.text().length > 0;
+if (isJson && hasBody) {
+  const data = pm.response.json();
+
+    pm.test("200 OK", () => pm.response.code === 200);
+    const a = pm.response.json();
+    pm.test("Tiene id", () => a && (a._id || a.id));
+    pm.test("Tiene name", () => a && a.name);
+
+
+} else {
+  pm.test("Sin body (204 o error manejado)", () => [204,404].includes(pm.response.code));
+}
