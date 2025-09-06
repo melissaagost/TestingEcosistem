@@ -48,6 +48,9 @@
 							"pm.test(\"Creación de autor 201/200\", () => [200,201].includes(pm.response.code));\r",
 							"pm.test(\"Autor tiene id\", () => a && (a._id || a.id));\r",
 							"pm.environment.set(\"authorId\", a._id || a.id);\r",
+							"const runId = pm.collectionVariables.get(\"runId\");\r",
+							"pm.test(\"Nombre incluye runId\", () => pm.response.json().name.includes(runId));\r",
+							"\r",
 							""
 						],
 						"type": "text/javascript",
@@ -76,7 +79,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{ \"name\": \"Harper Lee\" }",
+					"raw": "{\r\n  \"name\": \"Author {{runId}}\"\r\n}\r\n",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -90,6 +93,126 @@
 					],
 					"path": [
 						"author"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "POST Create Book",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Creación 200/201\", () => pm.expect([200,201]).to.include(pm.response.code));\r",
+							"\r",
+							"const isJson = pm.response.headers.get(\"Content-Type\")?.includes(\"application/json\");\r",
+							"const bodyText = pm.response.text();\r",
+							"const hasBody = bodyText && bodyText.length > 0;\r",
+							"\r",
+							"pm.test(\"Respuesta con JSON\", () => pm.expect(isJson && hasBody).to.be.true);\r",
+							"\r",
+							"if (isJson && hasBody) {\r",
+							"  const b = pm.response.json();\r",
+							"\r",
+							"  pm.test(\"Tiene id\", () => pm.expect(b && (b._id || b.id)).to.be.ok);\r",
+							"\r",
+							"  // Guardar id para el resto de la suite\r",
+							"  pm.environment.set(\"bookId\", b._id || b.id);\r",
+							"\r",
+							"  // Validar que se usó el runId\r",
+							"  const runId = pm.collectionVariables.get(\"runId\");\r",
+							"  pm.test(\"Título incluye runId\", () => pm.expect(String(b.title)).to.include(runId));\r",
+							"\r",
+							"  // (Opcional) Schema mínimo\r",
+							"  pm.test(\"Schema básico\", () => {\r",
+							"    const schema = {\r",
+							"      type: \"object\",\r",
+							"      required: [\"title\",\"publisher\",\"pageCount\"],\r",
+							"      properties: {\r",
+							"        title: { type: \"string\" },\r",
+							"        publisher: { type: \"string\" },\r",
+							"        pageCount: { type: [\"number\",\"integer\",\"string\"] }\r",
+							"      }\r",
+							"    };\r",
+							"    pm.response.to.have.jsonSchema(schema);\r",
+							"  });\r",
+							"}\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Usamos el runId global\r",
+							"const runId = pm.collectionVariables.get(\"runId\");\r",
+							"\r",
+							"// Datos únicos para este libro\r",
+							"// Nota: {{$uuid}} se resuelve en runtime cuando lo usás dentro de strings con replaceIn\r",
+							"const uuid = pm.variables.replaceIn('{{$uuid}}');\r",
+							"\r",
+							"pm.variables.set(\"bookTitle\", `Book-${runId}-${uuid}`);\r",
+							"pm.variables.set(\"publisher\", `Pub-${runId}`);\r",
+							"pm.variables.set(\"pages\", 100 + Math.floor(Math.random() * 400));\r",
+							"\r",
+							"// Validación: necesitamos authorId seteado por el request \"POST Create Author\"\r",
+							"if (!pm.environment.get(\"authorId\")) {\r",
+							"  // Opción A (recomendada en CI): fallar explícito para que te avise\r",
+							"  throw new Error(\"Falta authorId. Corré primero 'POST Create Author'.\");\r",
+							"\r",
+							"  // Opción B (automatizar): crear el autor on-the-fly\r",
+							"  /*\r",
+							"  pm.sendRequest({\r",
+							"    url: pm.variables.get(\"baseUrl\") + \"/author\",\r",
+							"    method: \"POST\",\r",
+							"    header: { \"Content-Type\": \"application/json\" },\r",
+							"    body: { mode: \"raw\", raw: JSON.stringify({ name: `Author ${runId}` }) }\r",
+							"  }, (err, res) => {\r",
+							"    if (err || ![200,201].includes(res.code)) {\r",
+							"      throw new Error(\"No se pudo crear el autor automáticamente.\");\r",
+							"    }\r",
+							"    const a = res.json();\r",
+							"    pm.environment.set(\"authorId\", a._id || a.id);\r",
+							"  });\r",
+							"  */\r",
+							"}\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"title\": \"{{bookTitle}}\",\r\n  \"author\": \"{{authorId}}\",\r\n  \"publisher\": \"{{publisher}}\",\r\n  \"pageCount\": {{pages}}\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/books",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"books"
 					]
 				}
 			},
@@ -147,7 +270,8 @@
 					"script": {
 						"exec": [
 							"pm.test(\"200 OK\", () => pm.response.code === 200);\r",
-							"pm.test(\"Respuesta es un arreglo JSON\", () => Array.isArray(pm.response.json()));"
+							"pm.test(\"Respuesta es un arreglo JSON\", () => Array.isArray(pm.response.json()));\r",
+							""
 						],
 						"type": "text/javascript",
 						"packages": {}
@@ -179,13 +303,9 @@
 							"const isJson = pm.response.headers.get('Content-Type')?.includes('application/json');\r",
 							"const hasBody = pm.response.text().length > 0;\r",
 							"if (isJson && hasBody) {\r",
-							"  const data = pm.response.json();\r",
-							"  \r",
-							"    pm.test(\"200 OK\", () => pm.response.code === 200 || code ===204);\r",
-							"    const a = pm.response.json();\r",
-							"    pm.test(\"Nombre actualizado\", () => a && a.name && a.name.includes(\"(updated)\"));\r",
-							"\r",
-							"\r",
+							"  const a = pm.response.json();\r",
+							"  pm.test(\"200/204 OK\", () => [200,204].includes(pm.response.code));\r",
+							"  pm.test(\"Nombre actualizado\", () => a && a.name && a.name.includes(\"(updated)\"));\r",
 							"} else {\r",
 							"  pm.test(\"Sin body (204 o error manejado)\", () => [204,404].includes(pm.response.code));\r",
 							"}\r",
@@ -207,7 +327,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{ \"name\": \"Harper Lee (updated)\" }\r\n",
+					"raw": "{ \"name\": \"Author {{runId}} (updated)\" }\r\n",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -291,53 +411,6 @@
 			"response": []
 		},
 		{
-			"name": "POST Create Book",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"const b = pm.response.json();\r",
-							"pm.test(\"Creación de libro 201/200\", () => [200,201].includes(pm.response.code));\r",
-							"pm.test(\"Libro tiene id\", () => b && (b._id || b.id));\r",
-							"pm.environment.set(\"bookId\", b._id || b.id);"
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				}
-			],
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json",
-						"type": "text"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n  \"title\": \"To Kill a Mockingbird\",\r\n  \"author\": \"{{authorId}}\",\r\n  \"publisher\": \"J.B. Lippincott & Co.\",\r\n  \"pageCount\": 281\r\n}\r\n",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{baseUrl}}/books",
-					"host": [
-						"{{baseUrl}}"
-					],
-					"path": [
-						"books"
-					]
-				}
-			},
-			"response": []
-		},
-		{
 			"name": "GET Book by Id",
 			"event": [
 				{
@@ -347,12 +420,10 @@
 							"const isJson = pm.response.headers.get('Content-Type')?.includes('application/json');\r",
 							"const hasBody = pm.response.text().length > 0;\r",
 							"if (isJson && hasBody) {\r",
-							"  const data = pm.response.json();\r",
-							"\r",
-							"    pm.test(\"200 OK\", () => pm.response.code === 200);\r",
-							"    const b = pm.response.json();\r",
-							"    pm.test(\"Tiene título\", () => b && b.title);\r",
-							"\r",
+							"  const b = pm.response.json();\r",
+							"  pm.test(\"200 OK\", () => pm.response.code === 200);\r",
+							"  pm.test(\"Tiene título\", () => b && b.title);\r",
+							"  pm.test(\"Título incluye runId\", () => b.title.includes(pm.collectionVariables.get(\"runId\")));\r",
 							"} else {\r",
 							"  pm.test(\"Sin body (204 o error manejado)\", () => [204,404].includes(pm.response.code));\r",
 							"}\r",
@@ -389,12 +460,9 @@
 							"const isJson = pm.response.headers.get('Content-Type')?.includes('application/json');\r",
 							"const hasBody = pm.response.text().length > 0;\r",
 							"if (isJson && hasBody) {\r",
-							"  const data = pm.response.json();\r",
-							"  \r",
-							"    pm.test(\"200 OK\", () => pm.response.code === 200 || code === 204);\r",
-							"    const b = pm.response.json();\r",
-							"    pm.test(\"pageCount actualizado\", () => b && (+b.pageCount === 300));\r",
-							"\r",
+							"  const b = pm.response.json();\r",
+							"  pm.test(\"200/204 OK\", () => [200,204].includes(pm.response.code));\r",
+							"  pm.test(\"pageCount actualizado\", () => b && (+b.pageCount === 300));\r",
 							"} else {\r",
 							"  pm.test(\"Sin body (204 o error manejado)\", () => [204,404].includes(pm.response.code));\r",
 							"}\r",
@@ -443,10 +511,19 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Borrado 200/204\", () => [200,204].includes(pm.response.code));"
+							"pm.test(\"Borrado 200/204\", () => [200,204].includes(pm.response.code));\r",
+							"pm.environment.unset(\"bookId\");\r",
+							""
 						],
 						"type": "text/javascript",
 						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"packages": {},
+						"type": "text/javascript"
 					}
 				}
 			],
@@ -496,6 +573,34 @@
 				}
 			},
 			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					"// Si no existe todavía, creamos un runId único por suite\r",
+					"if (!pm.collectionVariables.get(\"runId\")) {\r",
+					"    const runId = \"run_\" + Date.now();\r",
+					"    pm.collectionVariables.set(\"runId\", runId);\r",
+					"    console.log(\"Nuevo runId:\", runId);\r",
+					"}\r",
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
 		}
 	]
 }

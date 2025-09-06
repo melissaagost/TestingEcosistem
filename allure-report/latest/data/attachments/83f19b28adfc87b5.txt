@@ -1,0 +1,6 @@
+{
+  "title": "Book-run_1757117931108-{{$uuid}}",
+  "author": "68bb7deb04c1cc2f5f525e04",
+  "publisher": "Pub-run_1757117931108",
+  "pageCount": 156
+}

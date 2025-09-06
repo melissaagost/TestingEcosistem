@@ -1,0 +1,6 @@
+// Si no existe todavía, creamos un runId único por suite
+if (!pm.collectionVariables.get("runId")) {
+    const runId = "run_" + Date.now();
+    pm.collectionVariables.set("runId", runId);
+    console.log("Nuevo runId:", runId);
+}

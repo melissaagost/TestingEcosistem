@@ -1,0 +1,1 @@
+{"message":"Book updated successfully","book":{"_id":"68bb7deb04c1cc2f5f525e06","title":"Book-run_1757117931108-{{$uuid}}","author":"68bb7deb04c1cc2f5f525e04","publisher":"Pub-run_1757117931108","pageCount":300,"__v":0}}

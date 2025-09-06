@@ -1,0 +1,6 @@
+{
+  "title": "Book-run_1757117562493-{{$uuid}}",
+  "author": "{{authorId}}",
+  "publisher": "Pub-run_1757117562493",
+  "pageCount": 175
+}
