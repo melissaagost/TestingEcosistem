@@ -2,50 +2,59 @@ name: API Tests (Docker + Newman + Allure)
 
 on:
   push:
+    branches: [ "main" ]
   pull_request:
+    branches: [ "main" ]
 
 jobs:
   test:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-      # (Opcional) acelera builds si tu app es pesada
-      # - uses: actions/cache@v4
-      #   with:
-      #     path: |
-      #       ~/.npm
-      #     key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+    # 1 Construir imágenes
+    - name: Build images
+      run: docker compose build
 
-      - name: Build images
-        run: docker compose build
+    # 2 Levantar app + mongo en background
+    - name: Start app stack (mongo + app)
+      run: docker compose up -d mongo app
 
-      - name: Start app stack (mongo + app)
-        run: docker compose up -d mongo app
+    # 3 Ejecutar Newman (tests)
+    - name: Run Newman tests
+      run: docker compose up --exit-code-from tests tests
 
-      - name: Run Newman tests
-        run: docker compose up --exit-code-from tests tests
+    # 4 Subir resultados Allure
+    - name: Upload Allure results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: allure-results
+        path: allure-results
 
-      - name: Upload Allure results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: allure-results
-          path: allure-results
+    # 5 Preparar carpetas locales para reporte
+    - name: Prepare report dirs
+      if: always()
+      run: |
+        mkdir -p allure-results
+        mkdir -p allure-report
 
-      # (Opcional) Generar HTML de Allure en CI y subirlo como artefacto
-      - name: Generate Allure HTML
-        if: always()
-        run: |
-          docker run --rm \
-            -v "$PWD/allure-results:/allure-results:ro" \
-            -v "$PWD/allure-report:/allure-report" \
-            frankescobar/allure-docker-service \
-            /bin/sh -lc "allure generate /allure-results --clean -o /allure-report"
-      - name: Upload Allure HTML
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: allure-report
-          path: allure-report
+    # 6 Generar reporte HTML
+    - name: Generate Allure HTML
+      if: always()
+      run: |
+        docker run --rm \
+          -u 0 \
+          -v "$PWD/allure-results:/allure-results:ro" \
+          -v "$PWD/allure-report:/allure-report" \
+          frankescobar/allure-docker-service \
+          /bin/sh -lc "allure generate /allure-results --clean -o /allure-report"
+
+    # 7 Subir reporte HTML como artefacto
+    - name: Upload Allure HTML
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: allure-report
+        path: allure-report
